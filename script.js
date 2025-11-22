@@ -1,3 +1,8 @@
+// YouTube Music Player
+let youtubePlayer;
+let isYouTubeReady = false;
+let progressInterval;
+
 // Initialize when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
   // Create floating hearts background
@@ -20,72 +25,196 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Start animations
   startLyricsAnimation();
+
+  // Add click event to entire document for audio unlock
+  document.addEventListener("click", unlockAudio, { once: true });
 });
+
+// YouTube API callback
+function onYouTubeIframeAPIReady() {
+  youtubePlayer = new YT.Player("youtubePlayer", {
+    height: "100",
+    width: "100",
+    videoId: "OPFmjthC8LY",
+    playerVars: {
+      autoplay: 0,
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      loop: 1,
+      modestbranding: 1,
+      playlist: "OPFmjthC8LY",
+    },
+    events: {
+      onReady: onYouTubePlayerReady,
+      onStateChange: onYouTubePlayerStateChange,
+      onError: onYouTubePlayerError,
+    },
+  });
+}
+
+function onYouTubePlayerReady(event) {
+  isYouTubeReady = true;
+  console.log("YouTube player ready");
+
+  // Set volume to 50% by default
+  event.target.setVolume(50);
+
+  // Update volume slider
+  document.getElementById("volumeSlider").value = 50;
+
+  console.log("YouTube player is ready. Click anywhere to start music.");
+}
+
+function onYouTubePlayerStateChange(event) {
+  const playingIndicator = document.getElementById("playingIndicator");
+
+  switch (event.data) {
+    case YT.PlayerState.PLAYING:
+      playingIndicator.style.display = "inline-flex";
+      startProgressUpdate();
+      break;
+    case YT.PlayerState.PAUSED:
+      playingIndicator.style.display = "none";
+      stopProgressUpdate();
+      break;
+    case YT.PlayerState.ENDED:
+      // Video ended, but loop should restart it
+      playingIndicator.style.display = "none";
+      stopProgressUpdate();
+      break;
+  }
+
+  updatePlayButton();
+}
+
+function onYouTubePlayerError(event) {
+  console.error("YouTube Player Error:", event.data);
+  document.querySelector(".song-title").textContent =
+    "Music unavailable - YouTube error";
+}
 
 // Music Player Functions
 function initMusicPlayer() {
-  const audio = document.getElementById("backgroundMusic");
   const playPauseBtn = document.getElementById("playPauseBtn");
   const muteBtn = document.getElementById("muteBtn");
-  const progress = document.getElementById("progress");
-  const playingIndicator = document.getElementById("playingIndicator");
-
-  // Try to play audio automatically (with user interaction)
-  let audioPlayed = false;
-
-  document.body.addEventListener("click", function () {
-    if (!audioPlayed) {
-      audio.play().catch((e) => {
-        console.log("Autoplay prevented:", e);
-      });
-      audioPlayed = true;
-      updatePlayButton();
-    }
-  });
+  const volumeSlider = document.getElementById("volumeSlider");
 
   // Play/Pause functionality
   playPauseBtn.addEventListener("click", function () {
-    if (audio.paused) {
-      audio.play();
-    } else {
-      audio.pause();
-    }
-    updatePlayButton();
+    togglePlayPause();
   });
 
   // Mute functionality
   muteBtn.addEventListener("click", function () {
-    audio.muted = !audio.muted;
-    updateMuteButton();
+    toggleMute();
   });
 
-  // Update progress bar
-  audio.addEventListener("timeupdate", function () {
-    const percent = (audio.currentTime / audio.duration) * 100;
-    progress.style.width = percent + "%";
+  // Volume slider functionality
+  volumeSlider.addEventListener("input", function () {
+    setVolume(this.value);
   });
-
-  // Update play button state
-  function updatePlayButton() {
-    const icon = playPauseBtn.querySelector("i");
-    if (audio.paused) {
-      icon.className = "fas fa-play";
-      playingIndicator.style.display = "none";
-    } else {
-      icon.className = "fas fa-pause";
-      playingIndicator.style.display = "inline-flex";
-    }
-  }
-
-  // Update mute button state
-  function updateMuteButton() {
-    const icon = muteBtn.querySelector("i");
-    icon.className = audio.muted ? "fas fa-volume-mute" : "fas fa-volume-up";
-  }
 
   // Initialize buttons
   updatePlayButton();
   updateMuteButton();
+}
+
+function unlockAudio() {
+  if (isYouTubeReady) {
+    // Start playing when user first interacts
+    youtubePlayer.playVideo();
+  }
+}
+
+function togglePlayPause() {
+  if (!isYouTubeReady) return;
+
+  if (youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+    youtubePlayer.pauseVideo();
+  } else {
+    youtubePlayer.playVideo();
+  }
+}
+
+function toggleMute() {
+  if (!isYouTubeReady) return;
+
+  if (youtubePlayer.isMuted()) {
+    youtubePlayer.unMute();
+  } else {
+    youtubePlayer.mute();
+  }
+  updateMuteButton();
+}
+
+function setVolume(volume) {
+  if (!isYouTubeReady) return;
+  youtubePlayer.setVolume(volume);
+  updateMuteButton();
+}
+
+function updatePlayButton() {
+  const playPauseBtn = document.getElementById("playPauseBtn");
+  const icon = playPauseBtn.querySelector("i");
+
+  if (!isYouTubeReady) {
+    icon.className = "fas fa-play";
+    return;
+  }
+
+  if (youtubePlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+    icon.className = "fas fa-pause";
+  } else {
+    icon.className = "fas fa-play";
+  }
+}
+
+function updateMuteButton() {
+  const muteBtn = document.getElementById("muteBtn");
+  const icon = muteBtn.querySelector("i");
+  const volumeSlider = document.getElementById("volumeSlider");
+
+  if (!isYouTubeReady) {
+    icon.className = "fas fa-volume-up";
+    return;
+  }
+
+  if (youtubePlayer.isMuted() || youtubePlayer.getVolume() === 0) {
+    icon.className = "fas fa-volume-mute";
+  } else {
+    icon.className = "fas fa-volume-up";
+  }
+
+  // Update slider to match actual volume
+  if (!youtubePlayer.isMuted()) {
+    volumeSlider.value = youtubePlayer.getVolume();
+  }
+}
+
+function startProgressUpdate() {
+  stopProgressUpdate(); // Clear any existing interval
+  progressInterval = setInterval(updateProgressBar, 1000);
+}
+
+function stopProgressUpdate() {
+  if (progressInterval) {
+    clearInterval(progressInterval);
+    progressInterval = null;
+  }
+}
+
+function updateProgressBar() {
+  if (!isYouTubeReady) return;
+
+  const progress = document.getElementById("progress");
+  const duration = youtubePlayer.getDuration();
+  const currentTime = youtubePlayer.getCurrentTime();
+
+  if (duration > 0) {
+    const percent = (currentTime / duration) * 100;
+    progress.style.width = percent + "%";
+  }
 }
 
 // Enhanced scroll animations
@@ -102,7 +231,7 @@ function initScrollAnimations() {
   }, 500);
 
   // Scroll event listener
-  window.addEventListener("scroll", function () {
+  const scrollHandler = function () {
     // Message texts
     messageTexts.forEach((text) => {
       const elementTop = text.getBoundingClientRect().top;
@@ -130,16 +259,18 @@ function initScrollAnimations() {
         }, index * 150);
       }
     });
-  });
+  };
+
+  window.addEventListener("scroll", scrollHandler);
 
   // Trigger initial check
-  window.dispatchEvent(new Event("scroll"));
+  scrollHandler();
 }
 
 // Countdown Timer
 function initCountdown() {
   // Set the date when you first met or started liking her
-  const startDate = new Date("2024-01-01"); // Change this date
+  const startDate = new Date("2024-01-01"); // Change this to your actual date
 
   function updateCountdown() {
     const now = new Date();
@@ -170,19 +301,23 @@ function initCountdown() {
 function startLyricsAnimation() {
   const lyricLines = document.querySelectorAll(".lyric-line");
 
-  lyricLines.forEach((line, index) => {
-    setTimeout(() => {
-      line.classList.add("show");
-    }, (index + 1) * 1500);
-  });
+  function animateLyrics() {
+    lyricLines.forEach((line, index) => {
+      setTimeout(() => {
+        line.classList.add("show");
+      }, (index + 1) * 1500);
+    });
+  }
 
-  // Restart animation every 10 seconds
+  animateLyrics();
+
+  // Restart animation every 15 seconds
   setInterval(() => {
     lyricLines.forEach((line) => {
       line.classList.remove("show");
     });
     setTimeout(() => {
-      startLyricsAnimation();
+      animateLyrics();
     }, 500);
   }, 15000);
 }
@@ -224,7 +359,7 @@ function createHeart(container, index) {
   const colors = ["#ff6b93", "#ff8fab", "#ffb3c6", "#ffcad4", "#ff4d7d"];
   const color = colors[Math.floor(Math.random() * colors.length)];
 
-  heart.style.setProperty("--heart-color", color);
+  heart.style.color = color;
 
   container.appendChild(heart);
 }
@@ -239,6 +374,14 @@ function initSecretHeart() {
     modal.style.display = "block";
     createSmallHearts();
     createConfetti();
+
+    // Try to play audio if not already playing
+    if (
+      isYouTubeReady &&
+      youtubePlayer.getPlayerState() !== YT.PlayerState.PLAYING
+    ) {
+      youtubePlayer.playVideo();
+    }
   });
 
   closeBtn.addEventListener("click", function () {
@@ -266,6 +409,7 @@ function createSmallHearts() {
     heart.style.left = `${10 + i * 12}%`;
     heart.style.animation = `float 6s linear infinite`;
     heart.style.animationDelay = `${i * 0.3}s`;
+    heart.style.color = "#ff6b93";
 
     container.appendChild(heart);
   }
@@ -296,7 +440,9 @@ function createConfetti() {
 
     // Remove confetti after animation
     setTimeout(() => {
-      confetti.remove();
+      if (confetti.parentNode) {
+        confetti.remove();
+      }
     }, animationDuration * 1000);
   }
 }
@@ -359,15 +505,7 @@ document.addEventListener("keydown", function (e) {
 
   // Press 'M' to toggle music
   if (e.key === "m" || e.key === "M") {
-    const audio = document.getElementById("backgroundMusic");
-    const playPauseBtn = document.getElementById("playPauseBtn");
-    if (audio.paused) {
-      audio.play();
-    } else {
-      audio.pause();
-    }
-    const icon = playPauseBtn.querySelector("i");
-    icon.className = audio.paused ? "fas fa-play" : "fas fa-pause";
+    togglePlayPause();
   }
 
   // Press 'Space' to create hearts
@@ -376,12 +514,32 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
+// Add floatUp animation for confetti
+const style = document.createElement("style");
+style.textContent = `
+    @keyframes floatUp {
+        0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
 // Console message
 console.log(
   "%c 💖 You found the secret! This website is a love letter to someone very special. 💖",
   "color: #ff6b93; font-size: 16px; font-weight: bold;"
 );
 console.log(
-  "%c 🎵 Now playing: Yakap - Figvres 🎵",
+  "%c 🎵 Now playing: Blue - Over October 🎵",
   "color: #667eea; font-size: 14px; font-style: italic;"
+);
+console.log(
+  "%c 💝 Click anywhere on the page to start the music! 💝",
+  "color: #ff6b93; font-size: 12px;"
 );

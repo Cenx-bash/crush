@@ -15,10 +15,13 @@
     />
   </head>
   <body>
-    <!-- Audio Player -->
+    <!-- YouTube Player Container -->
+    <div id="youtubePlayer" class="youtube-container"></div>
+
+    <!-- Music Player -->
     <div class="music-player" id="musicPlayer">
       <div class="music-info">
-        <span class="song-title">Yakap - Figvres </span>
+        <span class="song-title">Blue - Over October</span>
         <div class="progress-bar">
           <div class="progress" id="progress"></div>
         </div>
@@ -30,6 +33,16 @@
         <button class="control-btn" id="muteBtn">
           <i class="fas fa-volume-up"></i>
         </button>
+        <div class="volume-slider-container">
+          <input
+            type="range"
+            id="volumeSlider"
+            class="volume-slider"
+            min="0"
+            max="100"
+            value="50"
+          />
+        </div>
       </div>
     </div>
 
@@ -152,27 +165,7 @@
           </div>
         </section>
 
-        <section class="lyrics-section">
-          <h2 class="section-title">Songs That Remind Me of You</h2>
-          <div class="lyrics-card">
-            <div class="song-header">
-              <h3>"Yakap" - Figvres</h3>
-              <span class="playing-indicator" id="playingIndicator">
-                <i class="fas fa-music"></i> Now Playing
-              </span>
-            </div>
-            <div class="lyrics-content">
-              <p class="lyric-line">
-                "And I'd give up everything just to see you happy"
-              </p>
-              <p class="lyric-line">"In your eyes, I see my future"</p>
-              <p class="lyric-line">"You're the color in my blue"</p>
-              <p class="lyric-line">"Every moment with you feels brand new"</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="gallery-section">
+        <!---    <section class="gallery-section">
           <h2 class="section-title">Moments I Treasure</h2>
           <div class="photo-grid">
             <div class="photo-placeholder">
@@ -192,6 +185,28 @@
             </div>
           </div>
         </section>
+
+        <section class="countdown-section">
+          <h2 class="section-title">Since You Came Into My Life</h2>
+          <div class="countdown-container">
+            <div class="countdown-item">
+              <div class="countdown-number" id="days">0</div>
+              <div class="countdown-label">Days</div>
+            </div>
+            <div class="countdown-item">
+              <div class="countdown-number" id="hours">0</div>
+              <div class="countdown-label">Hours</div>
+            </div>
+            <div class="countdown-item">
+              <div class="countdown-number" id="minutes">0</div>
+              <div class="countdown-label">Minutes</div>
+            </div>
+            <div class="countdown-item">
+              <div class="countdown-number" id="seconds">0</div>
+              <div class="countdown-label">Seconds</div>
+            </div>
+          </div>
+        </section> -->
       </main>
 
       <footer class="footer">
@@ -232,14 +247,7 @@
     <!-- Confetti Container -->
     <div class="confetti-container"></div>
 
-    <audio id="backgroundMusic" loop>
-      <source
-        src="https://youtu.be/OPFmjthC8LY?si=eFDc8t2RahfH5Cuq"
-        type="audio/mpeg"
-      />
-    </audio>
-
+    <script src="https://youtu.be/OPFmjthC8LY?si=eFDc8t2RahfH5Cuq"></script>
     <script src="script.js"></script>
   </body>
-  4
 </html>
